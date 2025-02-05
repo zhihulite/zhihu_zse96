@@ -16,42 +16,42 @@ local dict5 = { ['0'] = '17', ['1'] = '8A', ['2'] = '9A', ['3'] = '97', ['4'] = 
 
 -- 创建一个支持 0 键访问的代理表
 local function createZeroIndexedProxy(tbl)
-    if type(tbl) ~= "table" then
-        error("必须传入table")
+  if type(tbl) ~= "table" then
+    error("必须传入table")
+  end
+  return setmetatable({}, {
+    __index = function(_, key)
+      --静态表 代码写的没问题 无需异常判断
+      return rawget(tbl, key + 1)
+    end,
+    __newindex = function(_, key, value)
+      error("禁止修改只读表", 2)
     end
-    return setmetatable({}, {
-        __index = function(_, key)
-            --静态表 代码写的没问题 无需异常判断
-            return rawget(tbl, key + 1)
-        end,
-        __newindex = function(_, key, value)
-            error("禁止修改只读表", 2)
-        end
-    })
+  })
 end
 
 -- 创建一个支持将键转为字符串访问的代理表
 local function createStringKeyProxy(tbl)
-    if type(tbl) ~= "table" then
-        error("必须传入table")
+  if type(tbl) ~= "table" then
+    error("必须传入table")
+  end
+  return setmetatable({}, {
+    __index = function(_, key)
+      return rawget(tbl, tostring(key))
+    end,
+    __newindex = function(_, key, value)
+      error("禁止修改只读表", 2)
     end
-    return setmetatable({}, {
-        __index = function(_, key)
-            return rawget(tbl, tostring(key))
-        end,
-        __newindex = function(_, key, value)
-            error("禁止修改只读表", 2)
-        end
-    })
+  })
 end
 
 -- 批量创建代理表的辅助函数
 local function createProxies(proxy,...)
-    local proxies = {}
-    for _, tbl in ipairs({...}) do
-        table.insert(proxies, proxy(tbl))
-    end
-    return table.unpack(proxies)
+  local proxies = {}
+  for _, tbl in ipairs({...}) do
+    table.insert(proxies, proxy(tbl))
+  end
+  return table.unpack(proxies)
 end
 
 -- 代理表支持从0开始访问table
@@ -61,271 +61,271 @@ _roundConstants, dict1, dict2,dict3,dict4,dict5 = createProxies(createStringKeyP
 
 -- Hex 编码：字节数组 → 十六进制字符串
 local function bytesToHex(bytes)
-    local hexString = ""
-    for _, byte in ipairs(bytes) do
-        hexString = hexString .. string.format("%02x", byte)
-    end
-    return hexString
+  local hexString = ""
+  for _, byte in ipairs(bytes) do
+    hexString = hexString .. string.format("%02x", byte)
+  end
+  return hexString
 end
 
 -- Hex 解码：十六进制字符串 → 字节数组
 local function hexToBytes(hexString)
-    -- 处理奇数长度情况
-    if #hexString % 2 ~= 0 then
-        hexString = "0"..hexString
-    end
-    local bytes = {}
-    for i = 1, #hexString, 2 do
-        local byte_str = hexString:sub(i, i+1)
-        table.insert(bytes, tonumber(byte_str, 16))
-    end
-    return bytes
+  -- 处理奇数长度情况
+  if #hexString % 2 ~= 0 then
+    hexString = "0"..hexString
+  end
+  local bytes = {}
+  for i = 1, #hexString, 2 do
+    local byte_str = hexString:sub(i, i+1)
+    table.insert(bytes, tonumber(byte_str, 16))
+  end
+  return bytes
 end
 
 -- 大数异或核心函数
 local function big_xor(hex1, hex2)
-    -- 转换为字节数组
-    local bytes1 = hexToBytes(hex1)
-    local bytes2 = hexToBytes(hex2)
-    
-    -- 对齐长度（前补零）
-    local max_len = math.max(#bytes1, #bytes2)
-    while #bytes1 < max_len do table.insert(bytes1, 1, 0) end
-    while #bytes2 < max_len do table.insert(bytes2, 1, 0) end
-    
-    -- 逐字节异或
-    local result = {}
-    for i = 1, max_len do
-        result[i] = bit32.bxor(bytes1[i], bytes2[i])
-    end
-    
-    return bytesToHex(result)
-end 
+  -- 转换为字节数组
+  local bytes1 = hexToBytes(hex1)
+  local bytes2 = hexToBytes(hex2)
+
+  -- 对齐长度（前补零）
+  local max_len = math.max(#bytes1, #bytes2)
+  while #bytes1 < max_len do table.insert(bytes1, 1, 0) end
+  while #bytes2 < max_len do table.insert(bytes2, 1, 0) end
+
+  -- 逐字节异或
+  local result = {}
+  for i = 1, max_len do
+    result[i] = bit32.bxor(bytes1[i], bytes2[i])
+  end
+
+  return bytesToHex(result)
+end
 
 -- 模拟 BigInt 处理函数 将 hex 转换为 4x4 矩阵
 local function hex_to_matrix(hex)
-    local matrix = {{}, {}, {}, {}}
-    for i = 1, #hex, 2 do
-        local byte_str = hex:sub(i, i+1)
-        local byte = tonumber(byte_str, 16)
-        local row = math.floor((i-1)/8) + 1
-        table.insert(matrix[row], byte)
-    end
-    return matrix
+  local matrix = {{}, {}, {}, {}}
+  for i = 1, #hex, 2 do
+    local byte_str = hex:sub(i, i+1)
+    local byte = tonumber(byte_str, 16)
+    local row = math.floor((i-1)/8) + 1
+    table.insert(matrix[row], byte)
+  end
+  return matrix
 end
 
 -- XOR 操作模板
 local function xorArrayTemplate(a1, a2, lookup)
-    local result = {}
-    for i = 1, #a1 do
-        local p1 = bit32.band(a2[i], 0xF) ~ bit32.band(bit32.lshift(a1[i], 4), 0xFF)
-        --lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
-        local v1 = bit32.rshift(lookup(p1), 4)
-        local p2 = bit32.band(bit32.rshift(a2[i], 4), 0xF) ~ bit32.lshift(bit32.rshift(a1[i], 4), 4)
-        --lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
-        local v2 = bit32.rshift(lookup(p2), 4)
-        table.insert(result, bit32.bxor(v1, bit32.lshift(v2, 4)))
-    end
-    return result
+  local result = {}
+  for i = 1, #a1 do
+    local p1 = bit32.band(a2[i], 0xF) ~ bit32.band(bit32.lshift(a1[i], 4), 0xFF)
+    --lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
+    local v1 = bit32.rshift(lookup(p1), 4)
+    local p2 = bit32.band(bit32.rshift(a2[i], 4), 0xF) ~ bit32.lshift(bit32.rshift(a1[i], 4), 4)
+    --lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
+    local v2 = bit32.rshift(lookup(p2), 4)
+    table.insert(result, bit32.bxor(v1, bit32.lshift(v2, 4)))
+  end
+  return result
 end
 
 
 -- 添加轮密钥
 local function addRoundKeys(state, round_key, lookup)
-    local result = {{}, {}, {}, {}}
-    for i = 1, 4 do
-        result[i] = xorArrayTemplate(state[i], round_key[i], lookup)
-    end
-    return result
+  local result = {{}, {}, {}, {}}
+  for i = 1, 4 do
+    result[i] = xorArrayTemplate(state[i], round_key[i], lookup)
+  end
+  return result
 end
 
 -- 处理状态矩阵
 local function processState(state1, state2, lookup, mask1, mask2)
-    local result = {}
-    for i = 1, 4 do
-        local rowResult = {}
-        for j = 1, 4 do
-            local p1 = bit32.bxor(bit32.band(state2[i][j], mask1), bit32.band(bit32.lshift(state1[i][j], 4), 0xFF))
---lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
-            local v1 = bit32.band(bit32.rshift(lookup(p1), 4), 0xFF)
-            local p2 = bit32.bxor(bit32.band(bit32.rshift(state2[i][j], 4), mask2), bit32.lshift(bit32.rshift(state1[i][j], 4), 4))
---lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
-            local v2 = bit32.band(bit32.rshift(lookup(p2), 4), 0xFF)
-            table.insert(rowResult, bit32.bxor(v1, bit32.lshift(v2, 4)))
-        end
-        table.insert(result, rowResult)
+  local result = {}
+  for i = 1, 4 do
+    local rowResult = {}
+    for j = 1, 4 do
+      local p1 = bit32.bxor(bit32.band(state2[i][j], mask1), bit32.band(bit32.lshift(state1[i][j], 4), 0xFF))
+      --lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
+      local v1 = bit32.band(bit32.rshift(lookup(p1), 4), 0xFF)
+      local p2 = bit32.bxor(bit32.band(bit32.rshift(state2[i][j], 4), mask2), bit32.lshift(bit32.rshift(state1[i][j], 4), 4))
+      --lua索引从1开始 createZeroIndexedProxy已经使用元表处理支持从0开始读取索引
+      local v2 = bit32.band(bit32.rshift(lookup(p2), 4), 0xFF)
+      table.insert(rowResult, bit32.bxor(v1, bit32.lshift(v2, 4)))
     end
-    return result
+    table.insert(result, rowResult)
+  end
+  return result
 end
 
 -- AES 子操作
 local subBytes = function(s1, s2)
-    return processState(s1, s2, function(i) return _sBox[i] end, 0xF, 0xFF)
+  return processState(s1, s2, function(i) return _sBox[i] end, 0xF, 0xFF)
 end
 
 local shiftRows = function(s, s3)
-    return processState(s, s3, function(i) return _sBox[i] end, 0xF, 0xF)
+  return processState(s, s3, function(i) return _sBox[i] end, 0xF, 0xF)
 end
 
 local mixColumns = function(s, s4)
-    return processState(s, s4, function(i) return _sBox[i] end, 0xF, 0xF)
+  return processState(s, s4, function(i) return _sBox[i] end, 0xF, 0xF)
 end
 
 -- 构建密钥
 local function buildKey(template, indices, source)
-    local parts = {}
-    for _, i in ipairs(indices) do
-        --lua截取字符串开始是1 所以加1
-        local startpos=i+1
-        --i+2是因为lua是从start截取到end 并非到end就结束截取
-        local index = tonumber(source:sub(startpos, i+2), 16) * 4
-        --dict的key都是string createStringKeyProxy已经使用元表处理支持number转string键值
-        table.insert(parts, template[index])
-    end
-    return table.concat(parts)
+  local parts = {}
+  for _, i in ipairs(indices) do
+    --lua截取字符串开始是1 所以加1
+    local startpos=i+1
+    --i+2是因为lua是从start截取到end 并非到end就结束截取
+    local index = tonumber(source:sub(startpos, i+2), 16) * 4
+    --dict的key都是string createStringKeyProxy已经使用元表处理支持number转string键值
+    table.insert(parts, template[index])
+  end
+  return table.concat(parts)
 end
 
 -- 状态矩阵转字符串
 local function stateToString(state)
-    local parts = {}
-    for _, row in ipairs(state) do
-        for _, byte in ipairs(row) do
-            table.insert(parts, string.format("%02x", byte))
-        end
+  local parts = {}
+  for _, row in ipairs(state) do
+    for _, byte in ipairs(row) do
+      table.insert(parts, string.format("%02x", byte))
     end
-    return table.concat(parts)
+  end
+  return table.concat(parts)
 end
 
 local function encrypt(input, mkeySchedule)
-    local state = addRoundKeys(hex_to_matrix(input), {mkeySchedule[1], mkeySchedule[2], mkeySchedule[3], mkeySchedule[4]}, function(i) return _keySchedule[i] end)
-    local keyTemplates = {
-        {template = dict1, indices = {0, 8, 16, 24}},
-        {template = dict2, indices = {10, 18, 26, 2}},
-        {template = dict3, indices = {20, 28, 4, 12}},
-        {template = dict4, indices = {30, 6, 14, 22}},
-    }
+  local state = addRoundKeys(hex_to_matrix(input), {mkeySchedule[1], mkeySchedule[2], mkeySchedule[3], mkeySchedule[4]}, function(i) return _keySchedule[i] end)
+  local keyTemplates = {
+    {template = dict1, indices = {0, 8, 16, 24}},
+    {template = dict2, indices = {10, 18, 26, 2}},
+    {template = dict3, indices = {20, 28, 4, 12}},
+    {template = dict4, indices = {30, 6, 14, 22}},
+  }
 
-    local states = {}
-    for _, t in ipairs(keyTemplates) do
+  local states = {}
+  for _, t in ipairs(keyTemplates) do
+    local hexData = buildKey(t.template, t.indices, stateToString(state))
+    table.insert(states, hex_to_matrix(hexData))
+  end
+
+
+  for i = 1, 9 do
+    state = addRoundKeys(mixColumns(shiftRows(subBytes(states[1], states[2]), states[3]), states[4]),
+    {mkeySchedule[4 * i + 1], mkeySchedule[4 * i + 2], mkeySchedule[4 * i + 3], mkeySchedule[4 * i + 4]},
+    function(i) return _sBox[i] end)
+
+    if i ~= 9 then
+      states = {}
+      for _, t in ipairs(keyTemplates) do
         local hexData = buildKey(t.template, t.indices, stateToString(state))
         table.insert(states, hex_to_matrix(hexData))
+      end
     end
+  end
+
+  local finalIndices = {0, 10, 20, 30, 8, 18, 28, 6, 16, 26, 4, 14, 24, 2, 12, 22}
+  local newKeyParts = {}
+  for _, i in ipairs(finalIndices) do
+    local index = tonumber(stateToString(state):sub(i + 1, i + 2), 16)
+    --dict的key都是string createStringKeyProxy已经使用元表处理支持number转string键值
+    table.insert(newKeyParts, dict5[index])
+  end
+  local newKey = table.concat(newKeyParts)
 
 
-    for i = 1, 9 do
-        state = addRoundKeys(mixColumns(shiftRows(subBytes(states[1], states[2]), states[3]), states[4]),
-                             {mkeySchedule[4 * i + 1], mkeySchedule[4 * i + 2], mkeySchedule[4 * i + 3], mkeySchedule[4 * i + 4]},
-                             function(i) return _sBox[i] end)
-
-        if i ~= 9 then
-            states = {}
-            for _, t in ipairs(keyTemplates) do
-                local hexData = buildKey(t.template, t.indices, stateToString(state))
-                table.insert(states, hex_to_matrix(hexData))
-            end
-        end
-    end
-
-    local finalIndices = {0, 10, 20, 30, 8, 18, 28, 6, 16, 26, 4, 14, 24, 2, 12, 22}
-    local newKeyParts = {}
-    for _, i in ipairs(finalIndices) do
-        local index = tonumber(stateToString(state):sub(i + 1, i + 2), 16)
-                --dict的key都是string createStringKeyProxy已经使用元表处理支持number转string键值
-        table.insert(newKeyParts, dict5[index])
-    end
-    local newKey = table.concat(newKeyParts)
-
-
-    return addRoundKeys(hex_to_matrix(newKey), {mkeySchedule[41], mkeySchedule[42], mkeySchedule[43], mkeySchedule[44]},
-                         function(i)  --_roundConstants的key都是string createStringKeyProxy已经使用元表处理支持number转string键值
-                         return tonumber(_roundConstants[i], 16) end)
+  return addRoundKeys(hex_to_matrix(newKey), {mkeySchedule[41], mkeySchedule[42], mkeySchedule[43], mkeySchedule[44]},
+  function(i) --_roundConstants的key都是string createStringKeyProxy已经使用元表处理支持number转string键值
+    return tonumber(_roundConstants[i], 16) end)
 end
 
 -- 加密函数
 local function aesEncrypt(inputHex, ivHex)
-    local hexData = {
-        "8cc1bbc96bc566b80528b0777044afe8",
-        "475bb7b8d7f563bb1d906c77817f05f1",
-        "ee0c4b61cf4fd3619a744038a4b0f887",
-        "036de86538dacfb2d951843df75d3cf5",
-        "fb0ead3988157a3f2a2211ba9c18e9fe",
-        "73d212241f0183a05d757ea66e80f0d8",
-        "260b251051b1d44bb07252166917c70e",
-        "ecdd96f9a9d03d09ae5748d5002b811a",
-        "35457064266861a73891d7fdc5f1286f",
-        "87a52a68d300c4019fede9401c704ad4",
-        "edd9095dc91e3780123c14cbb663a1e4"
-    }
-    
-    local inputWithIV = big_xor(inputHex,ivHex)
+  local hexData = {
+    "8cc1bbc96bc566b80528b0777044afe8",
+    "475bb7b8d7f563bb1d906c77817f05f1",
+    "ee0c4b61cf4fd3619a744038a4b0f887",
+    "036de86538dacfb2d951843df75d3cf5",
+    "fb0ead3988157a3f2a2211ba9c18e9fe",
+    "73d212241f0183a05d757ea66e80f0d8",
+    "260b251051b1d44bb07252166917c70e",
+    "ecdd96f9a9d03d09ae5748d5002b811a",
+    "35457064266861a73891d7fdc5f1286f",
+    "87a52a68d300c4019fede9401c704ad4",
+    "edd9095dc91e3780123c14cbb663a1e4"
+  }
 
-    local mkeySchedule = {}
-    for _, hexStr in ipairs(hexData) do
-        local bytes = hexToBytes(hexStr)
-        for i = 1, #bytes, 4 do
-            table.insert(mkeySchedule, {bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]})
-        end
+  local inputWithIV = big_xor(inputHex,ivHex)
+
+  local mkeySchedule = {}
+  for _, hexStr in ipairs(hexData) do
+    local bytes = hexToBytes(hexStr)
+    for i = 1, #bytes, 4 do
+      table.insert(mkeySchedule, {bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]})
     end
+  end
 
-    local cipherState = encrypt(inputWithIV, mkeySchedule)
-    local cipherText = stateToString(cipherState)
-    print('Encrypted: ' .. cipherText)
-    return cipherText
+  local cipherState = encrypt(inputWithIV, mkeySchedule)
+  local cipherText = stateToString(cipherState)
+  print('Encrypted: ' .. cipherText)
+  return cipherText
 end
 
 local function transform(inputArr, lookupTable)
-    local result = {}
-    for _, byte in ipairs(inputArr) do
-        table.insert(result, lookupTable[byte + 1]) -- Lua表
-    end
-    return result
+  local result = {}
+  for _, byte in ipairs(inputArr) do
+    table.insert(result, lookupTable[byte + 1]) -- Lua arrays are 1-indexed
+  end
+  return result
 end
 
-iArr = { 187, 185, 186, 184, 179, 177, 178, 176, 191, 189, 190, 188, 183, 181, 182, 180, 155, 153, 154, 152, 147, 145, 146, 144, 159, 157, 158, 156, 151, 149, 150, 148, 171, 169, 170, 168, 163, 161, 162, 160, 175, 173, 174, 172, 167, 165, 166, 164, 139, 137, 138, 136, 131, 129, 130, 128, 143, 141, 142, 140, 135, 133, 134, 132, 59, 57, 58, 56, 51, 49, 50, 48, 63, 61, 62, 60, 55, 53, 54, 52, 27, 25, 26, 24, 19, 17, 18, 16, 31, 29, 30, 28, 23, 21, 22, 20, 43, 41, 42, 40, 35, 33, 34, 32, 47, 45, 46, 44, 39, 37, 38, 36, 11, 9, 10, 8, 3, 1, 2, 0, 15, 13, 14, 12, 7, 5, 6, 4, 251, 249, 250, 248, 243, 241, 242, 240, 255, 253, 254, 252, 247, 245, 246, 244, 219, 217, 218, 216, 211, 209, 210, 208, 223, 221, 222, 220, 215, 213, 214, 212, 235, 233, 234, 232, 227, 225, 226, 224, 239, 237, 238, 236, 231, 229, 230, 228, 203, 201, 202, 200, 195, 193, 194, 192, 207, 205, 206, 204, 199, 197, 198, 196, 123, 121, 122, 120, 115, 113, 114, 112, 127, 125, 126, 124, 119, 117, 118, 116, 91, 89, 90, 88, 83, 81, 82, 80, 95, 93, 94, 92, 87, 85, 86, 84, 107, 105, 106, 104, 99, 97, 98, 96, 111, 109, 110, 108, 103, 101, 102, 100, 75, 73, 74, 72, 67, 65, 66, 64, 79, 77, 78, 76, 71, 69, 70, 68 }
-iArr2 = { 0, 2, 1, 3, 8, 10, 9, 11, 4, 6, 5, 7, 12, 14, 13, 15, 32, 34, 33, 35, 40, 42, 41, 43, 36, 38, 37, 39, 44, 46, 45, 47, 16, 18, 17, 19, 24, 26, 25, 27, 20, 22, 21, 23, 28, 30, 29, 31, 48, 50, 49, 51, 56, 58, 57, 59, 52, 54, 53, 55, 60, 62, 61, 63, 128, 130, 129, 131, 136, 138, 137, 139, 132, 134, 133, 135, 140, 142, 141, 143, 160, 162, 161, 163, 168, 170, 169, 171, 164, 166, 165, 167, 172, 174, 173, 175, 144, 146, 145, 147, 152, 154, 153, 155, 148, 150, 149, 151, 156, 158, 157, 159, 176, 178, 177, 179, 184, 186, 185, 187, 180, 182, 181, 183, 188, 190, 189, 191, 64, 66, 65, 67, 72, 74, 73, 75, 68, 70, 69, 71, 76, 78, 77, 79, 96, 98, 97, 99, 104, 106, 105, 107, 100, 102, 101, 103, 108, 110, 109, 111, 80, 82, 81, 83, 88, 90, 89, 91, 84, 86, 85, 87, 92, 94, 93, 95, 112, 114, 113, 115, 120, 122, 121, 123, 116, 118, 117, 119, 124, 126, 125, 127, 192, 194, 193, 195, 200, 202, 201, 203, 196, 198, 197, 199, 204, 206, 205, 207, 224, 226, 225, 227, 232, 234, 233, 235, 228, 230, 229, 231, 236, 238, 237, 239, 208, 210, 209, 211, 216, 218, 217, 219, 212, 214, 213, 215, 220, 222, 221, 223, 240, 242, 241, 243, 248, 250, 249, 251, 244, 246, 245, 247, 252, 254, 253, 255 }
+local iArr = { 187, 185, 186, 184, 179, 177, 178, 176, 191, 189, 190, 188, 183, 181, 182, 180, 155, 153, 154, 152, 147, 145, 146, 144, 159, 157, 158, 156, 151, 149, 150, 148, 171, 169, 170, 168, 163, 161, 162, 160, 175, 173, 174, 172, 167, 165, 166, 164, 139, 137, 138, 136, 131, 129, 130, 128, 143, 141, 142, 140, 135, 133, 134, 132, 59, 57, 58, 56, 51, 49, 50, 48, 63, 61, 62, 60, 55, 53, 54, 52, 27, 25, 26, 24, 19, 17, 18, 16, 31, 29, 30, 28, 23, 21, 22, 20, 43, 41, 42, 40, 35, 33, 34, 32, 47, 45, 46, 44, 39, 37, 38, 36, 11, 9, 10, 8, 3, 1, 2, 0, 15, 13, 14, 12, 7, 5, 6, 4, 251, 249, 250, 248, 243, 241, 242, 240, 255, 253, 254, 252, 247, 245, 246, 244, 219, 217, 218, 216, 211, 209, 210, 208, 223, 221, 222, 220, 215, 213, 214, 212, 235, 233, 234, 232, 227, 225, 226, 224, 239, 237, 238, 236, 231, 229, 230, 228, 203, 201, 202, 200, 195, 193, 194, 192, 207, 205, 206, 204, 199, 197, 198, 196, 123, 121, 122, 120, 115, 113, 114, 112, 127, 125, 126, 124, 119, 117, 118, 116, 91, 89, 90, 88, 83, 81, 82, 80, 95, 93, 94, 92, 87, 85, 86, 84, 107, 105, 106, 104, 99, 97, 98, 96, 111, 109, 110, 108, 103, 101, 102, 100, 75, 73, 74, 72, 67, 65, 66, 64, 79, 77, 78, 76, 71, 69, 70, 68 }
+local iArr2 = { 0, 2, 1, 3, 8, 10, 9, 11, 4, 6, 5, 7, 12, 14, 13, 15, 32, 34, 33, 35, 40, 42, 41, 43, 36, 38, 37, 39, 44, 46, 45, 47, 16, 18, 17, 19, 24, 26, 25, 27, 20, 22, 21, 23, 28, 30, 29, 31, 48, 50, 49, 51, 56, 58, 57, 59, 52, 54, 53, 55, 60, 62, 61, 63, 128, 130, 129, 131, 136, 138, 137, 139, 132, 134, 133, 135, 140, 142, 141, 143, 160, 162, 161, 163, 168, 170, 169, 171, 164, 166, 165, 167, 172, 174, 173, 175, 144, 146, 145, 147, 152, 154, 153, 155, 148, 150, 149, 151, 156, 158, 157, 159, 176, 178, 177, 179, 184, 186, 185, 187, 180, 182, 181, 183, 188, 190, 189, 191, 64, 66, 65, 67, 72, 74, 73, 75, 68, 70, 69, 71, 76, 78, 77, 79, 96, 98, 97, 99, 104, 106, 105, 107, 100, 102, 101, 103, 108, 110, 109, 111, 80, 82, 81, 83, 88, 90, 89, 91, 84, 86, 85, 87, 92, 94, 93, 95, 112, 114, 113, 115, 120, 122, 121, 123, 116, 118, 117, 119, 124, 126, 125, 127, 192, 194, 193, 195, 200, 202, 201, 203, 196, 198, 197, 199, 204, 206, 205, 207, 224, 226, 225, 227, 232, 234, 233, 235, 228, 230, 229, 231, 236, 238, 237, 239, 208, 210, 209, 211, 216, 218, 217, 219, 212, 214, 213, 215, 220, 222, 221, 223, 240, 242, 241, 243, 248, 250, 249, 251, 244, 246, 245, 247, 252, 254, 253, 255 }
 
 -- getmd5 获取md5值
 local function getMd5(url)
-    local md5str = md5.sumhexa(url)
-    return md5str
+  local md5str = md5.sumhexa(url)
+  return md5str
 end
 
 -- 主函数
 local function myEncrypt(inputForMd5)
-    -- Step 1: 计算 MD5 哈希
-    local md5Data = getMd5(inputForMd5)
-    print('MD5 Hash: ' .. md5Data)
+  -- Step 1: 计算 MD5 哈希
+  local md5Data = getMd5(inputForMd5)
+  print('MD5 Hash: ' .. md5Data)
 
-    -- Step 2: 使用 iArr 转换
-    local byte1 = {}
-    for c in md5Data:gmatch(".") do
-        table.insert(byte1, c:byte())
-    end
-    local res2 = transform(byte1, iArr)
+  -- Step 2: 使用 iArr 转换
+  local byte1 = {}
+  for c in md5Data:gmatch(".") do
+    table.insert(byte1, c:byte())
+  end
+  local res2 = transform(byte1, iArr)
 
-    -- Step 3: 转换为十六进制字符串
-    local input = bytesToHex(res2)
-    local str1 = input:sub(1, 32)
-    local str2 = input:sub(33)
+  -- Step 3: 转换为十六进制字符串
+  local input = bytesToHex(res2)
+  local str1 = input:sub(1, 32)
+  local str2 = input:sub(33)
 
-    -- Step 4: AES 加密
-    local sign1 = aesEncrypt(str1, '99303a3a32343a3992923a3b3a999292')
-    local sign2 = aesEncrypt(str2, sign1)
-    local sign3 = aesEncrypt('9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b', sign2)
-    print('Signatures: ' .. sign1 .. sign2 .. sign3)
+  -- Step 4: AES 加密
+  local sign1 = aesEncrypt(str1, '99303a3a32343a3992923a3b3a999292')
+  local sign2 = aesEncrypt(str2, sign1)
+  local sign3 = aesEncrypt('9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b', sign2)
+  print('Signatures: ' .. sign1 .. sign2 .. sign3)
 
-    -- Step 5: 使用 iArr2 转换
-    local byteArr = hexToBytes(sign1 .. sign2 .. sign3)
-    local bArr = {}
-    for _, i in ipairs(byteArr) do
-        table.insert(bArr, i >= 0 and i or i + 256)
-    end
-    local res = transform(bArr, iArr2)
+  -- Step 5: 使用 iArr2 转换
+  local byteArr = hexToBytes(sign1 .. sign2 .. sign3)
+  local bArr = {}
+  for _, i in ipairs(byteArr) do
+    table.insert(bArr, i >= 0 and i or i + 256)
+  end
+  local res = transform(bArr, iArr2)
 
-    -- Step 6: Base64 编码
-    local base64Str = '1.0_' .. base64.encode(string.char(table.unpack(res)))
-    print('Final Result: ' .. base64Str)
-    return base64Str
+  -- Step 6: Base64 编码
+  local base64Str = '1.0_' .. base64.encode(string.char(table.unpack(res)))
+  print('Final Result: ' .. base64Str)
+  return base64Str
 end
 
 -- 示例调用
