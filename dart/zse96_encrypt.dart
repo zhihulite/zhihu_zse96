@@ -258,15 +258,16 @@ String myEncrypt(String inputData) {
   List<int> res = _transform(Uint8List.fromList(bArr), iArr2);
 
   // Step 5: Base64 编码
-  String base64Str = '1.0_${base64.encode(Uint8List.fromList(res))}';
+  String base64Str = base64.encode(Uint8List.fromList(res));
   print('Final Result: $base64Str');
   return base64Str;
 }
 
 void main() {
   // 示例调用
-  // 计算 MD5 哈希 在大部分计算md5
+  // 计算 MD5 哈希 接口大部分需要计算md5 如果是json字符串不需要计算
   String md5Data = _getMd5('test');
   print('MD5 Hash: $md5Data');
+  // 如果加密的不是json 需要加上1.0_ 前缀
   myEncrypt(md5Data);
 }
