@@ -143,7 +143,8 @@ List<List<int>> _encrypt(BigInt input, List<List<int>> mkeySchedule) {
 
 // 加密函数
 String _aesEncrypt(String inputHex, String ivHex) {
-  final hexData = [
+  // 魔改aes加密 固定轮密钥 标准的aes可以推出后面的轮密钥
+  final roundKeys = [
     "8cc1bbc96bc566b80528b0777044afe8",
     "475bb7b8d7f563bb1d906c77817f05f1",
     "ee0c4b61cf4fd3619a744038a4b0f887",
@@ -157,17 +158,15 @@ String _aesEncrypt(String inputHex, String ivHex) {
     "edd9095dc91e3780123c14cbb663a1e4"
   ];
 
-  
-
   BigInt input = BigInt.parse(inputHex, radix: 16);
   BigInt iv = BigInt.parse(ivHex, radix: 16);
   BigInt inputWithIV = input ^ iv;
 
   List<List<int>> mkeySchedule = [];
-  for (String hexStr in hexData) {
+  for (String roundKey in roundKeys) {
     List<int> bytes = [];
-    for (int i = 0; i < hexStr.length; i += 2) {
-      bytes.add(int.parse(hexStr.substring(i, i + 2), radix: 16));
+    for (int i = 0; i < roundKey.length; i += 2) {
+      bytes.add(int.parse(roundKey.substring(i, i + 2), radix: 16));
     }
     for (int i = 0; i < bytes.length; i += 4) {
       mkeySchedule.add(bytes.sublist(i, i + 4));
@@ -180,118 +179,94 @@ String _aesEncrypt(String inputHex, String ivHex) {
   return cipherText;
 }
 
-Uint8List _transform(Uint8List inputArr, List<int> lookupTable) {
-  return Uint8List.fromList(
-    inputArr.map((byte) => lookupTable[byte]).toList(),
-  );
-}
-
-// 模拟获取token的函数
-String? _getToken() {
-  // 这里应该替换为实际的获取token逻辑
-  return "your_token_here"; // 替换为实际的token
+List<int> _transform(Uint8List inputArr, List<int> lookupTable) {
+  return inputArr.map((byte) => lookupTable[byte]).toList();
 }
 
 // getmd5 获取md5值
 String _getMd5(String url) {
-  // 提取路径
-  RegExp regex = RegExp(r"zhihu\.com(.+)");
-  Match? match = regex.firstMatch(url);
-  if (match == null || match.groupCount < 1) {
-    throw ArgumentError("Invalid URL format");
-  }
-  String path = match.group(1)!;
-
-  // 获取token
-  String? token = _getToken();
-  if (token == null) {
-    throw Exception("合成参数失败 请检查登录状态 (如若想不登录浏览跳转主页登录页即可 不用登录)");
-  }
-
-  // 加密前数据
-  String dataToEncrypt = "101_1_1.0+$path+$token";
-
   // 计算MD5哈希值
-  List<int> bytes = utf8.encode(dataToEncrypt);
+  List<int> bytes = utf8.encode(url);
   Digest digest = md5.convert(bytes);
   String md5str = digest.toString().toLowerCase();
 
   return md5str;
 }
 
+// 填充数据函数
+List<int> _padData(List<int> bytes) {
+  int blockSize = 16;
+
+  // 计算需要填充的长度
+  int paddingLength = blockSize - (bytes.length % blockSize);
+  if (paddingLength == blockSize) {
+    paddingLength = blockSize;
+  }
+
+  // 根据填充长度选择填充字节
+  List<int> fillBytes = [
+    0xB9, 0xBA, 0xB8, 0xB3, 0xB1, 0xB2, 0xB0, 0xBF,
+    0xBD, 0xBE, 0xBC, 0xB7, 0xB5, 0xB6, 0xB4, 0x9B
+  ];
+  int fillByte = fillBytes[paddingLength - 1];
+
+  // 填充数据
+  for (int i = 0; i < paddingLength; i++) {
+    bytes.add(fillByte);
+  }
+
+  return bytes;
+}
+
 
 // 主函数
-String myEncrypt(String inputForMd5) {
-  // Step 1: 计算 MD5 哈希
-  List<int> md5Bytes = md5.convert(utf8.encode(inputForMd5)).bytes;
-  String md5Data = _bytesToHex(md5Bytes);
-  print('MD5 Hash: $md5Data');
+String myEncrypt(String inputData) {
 
-  // Step 2: 使用 iArr 转换
-  Uint8List byte1 = Uint8List.fromList(utf8.encode(md5Data));
-  List<int> res2 = _transform(byte1, iArr);
+  // 查找表 (iArr 和 iArr2)
+  final List<int> iArr = [187, 185, 186, 184, 179, 177, 178, 176, 191, 189, 190, 188, 183, 181, 182, 180, 155, 153, 154, 152, 147, 145, 146, 144, 159, 157, 158, 156, 151, 149, 150, 148, 171, 169, 170, 168, 163, 161, 162, 160, 175, 173, 174, 172, 167, 165, 166, 164, 139, 137, 138, 136, 131, 129, 130, 128, 143, 141, 142, 140, 135, 133, 134, 132, 59, 57, 58, 56, 51, 49, 50, 48, 63, 61, 62, 60, 55, 53, 54, 52, 27, 25, 26, 24, 19, 17, 18, 16, 31, 29, 30, 28, 23, 21, 22, 20, 43, 41, 42, 40, 35, 33, 34, 32, 47, 45, 46, 44, 39, 37, 38, 36, 11, 9, 10, 8, 3, 1, 2, 0, 15, 13, 14, 12, 7, 5, 6, 4, 251, 249, 250, 248, 243, 241, 242, 240, 255, 253, 254, 252, 247, 245, 246, 244, 219, 217, 218, 216, 211, 209, 210, 208, 223, 221, 222, 220, 215, 213, 214, 212, 235, 233, 234, 232, 227, 225, 226, 224, 239, 237, 238, 236, 231, 229, 230, 228, 203, 201, 202, 200, 195, 193, 194, 192, 207, 205, 206, 204, 199, 197, 198, 196, 123, 121, 122, 120, 115, 113, 114, 112, 127, 125, 126, 124, 119, 117, 118, 116, 91, 89, 90, 88, 83, 81, 82, 80, 95, 93, 94, 92, 87, 85, 86, 84, 107, 105, 106, 104, 99, 97, 98, 96, 111, 109, 110, 108, 103, 101, 102, 100, 75, 73, 74, 72, 67, 65, 66, 64, 79, 77, 78, 76, 71, 69, 70, 68];
+  final List<int> iArr2 = [0, 2, 1, 3, 8, 10, 9, 11, 4, 6, 5, 7, 12, 14, 13, 15, 32, 34, 33, 35, 40, 42, 41, 43, 36, 38, 37, 39, 44, 46, 45, 47, 16, 18, 17, 19, 24, 26, 25, 27, 20, 22, 21, 23, 28, 30, 29, 31, 48, 50, 49, 51, 56, 58, 57, 59, 52, 54, 53, 55, 60, 62, 61, 63, 128, 130, 129, 131, 136, 138, 137, 139, 132, 134, 133, 135, 140, 142, 141, 143, 160, 162, 161, 163, 168, 170, 169, 171, 164, 166, 165, 167, 172, 174, 173, 175, 144, 146, 145, 147, 152, 154, 153, 155, 148, 150, 149, 151, 156, 158, 157, 159, 176, 178, 177, 179, 184, 186, 185, 187, 180, 182, 181, 183, 188, 190, 189, 191, 64, 66, 65, 67, 72, 74, 73, 75, 68, 70, 69, 71, 76, 78, 77, 79, 96, 98, 97, 99, 104, 106, 105, 107, 100, 102, 101, 103, 108, 110, 109, 111, 80, 82, 81, 83, 88, 90, 89, 91, 84, 86, 85, 87, 92, 94, 93, 95, 112, 114, 113, 115, 120, 122, 121, 123, 116, 118, 117, 119, 124, 126, 125, 127, 192, 194, 193, 195, 200, 202, 201, 203, 196, 198, 197, 199, 204, 206, 205, 207, 224, 226, 225, 227, 232, 234, 233, 235, 228, 230, 229, 231, 236, 238, 237, 239, 208, 210, 209, 211, 216, 218, 217, 219, 212, 214, 213, 215, 220, 222, 221, 223, 240, 242, 241, 243, 248, 250, 249, 251, 244, 246, 245, 247, 252, 254, 253, 255];
 
-  // Step 3: 转换为十六进制字符串
+  // Step 1: 使用 iArr 转换
+  Uint8List byte1 = Uint8List.fromList(utf8.encode(inputData));
+  List<int> res2 = _padData(_transform(byte1, iArr));
+
+  // Step 2: 转换为十六进制字符串 并分块
   String input = _bytesToHex(Uint8List.fromList(res2));
-  String str1 = input.substring(0, 32);
-  String str2 = input.substring(32);
+    // 分块处理，每32个字符为一个块
+  List<String> blocks = [];
+  for (int i = 0; i < input.length; i += 32) {
+    blocks.add(input.substring(i, i + 32 > input.length ? input.length : i + 32));
+  }
 
   // Step 4: AES 加密
-  String sign1 = _aesEncrypt(str1, '99303a3a32343a3992923a3b3a999292');
-  String sign2 = _aesEncrypt(str2, sign1);
-  String sign3 = _aesEncrypt('9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b', sign2);
-  print('Signatures: $sign1$sign2$sign3');
+  List<String> signatures = [];
+  // 初始 ivHex 是固定的
+  String ivHex = '99303a3a32343a3992923a3b3a999292';
+  for (String block in blocks) {
+    String signature = _aesEncrypt(block, ivHex);
+    signatures.add(signature);
+    ivHex = signature;
+  }
 
-  // Step 5: 使用 iArr2 转换
-  Uint8List byteArr = Uint8List.fromList(_hexToBytes('$sign1$sign2$sign3'));
+  // 合并所有签名
+  String finalSignature = signatures.join();
+  print('Signatures: $finalSignature');
+
+  // Step 4: 使用 iArr2 转换
+  Uint8List byteArr = Uint8List.fromList(_hexToBytes(finalSignature));
   List<int> bArr = byteArr.map((i) => i >= 0 ? i : i + 256).toList();
   List<int> res = _transform(Uint8List.fromList(bArr), iArr2);
 
-  // Step 6: Base64 编码
+  // Step 5: Base64 编码
   String base64Str = '1.0_${base64.encode(Uint8List.fromList(res))}';
   print('Final Result: $base64Str');
   return base64Str;
 }
 
 void main() {
-  myEncrypt("hhhhhhhhhh");
+  // 示例调用
+  // 计算 MD5 哈希 在大部分计算md5
+  String md5Data = _getMd5('test');
+  print('MD5 Hash: $md5Data');
+  myEncrypt(md5Data);
 }
-
-// 查找表 (iArr 和 iArr2)
-final List<int> iArr = [
-  187, 185, 186, 184, 179, 177, 178, 176, 191, 189, 190, 188, 183, 181, 182,
-  180, 155, 153, 154, 152, 147, 145, 146, 144, 159, 157, 158, 156, 151, 149,
-  150, 148, 171, 169, 170, 168, 163, 161, 162, 160, 175, 173, 174, 172, 167,
-  165, 166, 164, 139, 137, 138, 136, 131, 129, 130, 128, 143, 141, 142, 140,
-  135, 133, 134, 132, 59, 57, 58, 56, 51, 49, 50, 48, 63, 61, 62, 60, 55, 53,
-  54, 52, 27, 25, 26, 24, 19, 17, 18, 16, 31, 29, 30, 28, 23, 21, 22, 20,
-  43, 41, 42, 40, 35, 33, 34, 32, 47, 45, 46, 44, 39, 37, 38, 36, 11, 9, 10,
-  8, 3, 1, 2, 0, 15, 13, 14, 12, 7, 5, 6, 4, 251, 249, 250, 248, 243, 241,
-  242, 240, 255, 253, 254, 252, 247, 245, 246, 244, 219, 217, 218, 216, 211,
-  209, 210, 208, 223, 221, 222, 220, 215, 213, 214, 212, 235, 233, 234, 232,
-  227, 225, 226, 224, 239, 237, 238, 236, 231, 229, 230, 228, 203, 201, 202,
-  200, 195, 193, 194, 192, 207, 205, 206, 204, 199, 197, 198, 196, 123, 121,
-  122, 120, 115, 113, 114, 112, 127, 125, 126, 124, 119, 117, 118, 116, 91,
-  89, 90, 88, 83, 81, 82, 80, 95, 93, 94, 92, 87, 85, 86, 84, 107, 105, 106,
-  104, 99, 97, 98, 96, 111, 109, 110, 108, 103, 101, 102, 100, 75, 73, 74, 72,
-  67, 65, 66, 64, 79, 77, 78, 76, 71, 69, 70, 68
-];
-
-final List<int> iArr2 = [
-  0, 2, 1, 3, 8, 10, 9, 11, 4, 6, 5, 7, 12, 14, 13, 15, 32, 34, 33, 35, 40, 42,
-  41, 43, 36, 38, 37, 39, 44, 46, 45, 47, 16, 18, 17, 19, 24, 26, 25, 27, 20,
-  22, 21, 23, 28, 30, 29, 31, 48, 50, 49, 51, 56, 58, 57, 59, 52, 54, 53, 55,
-  60, 62, 61, 63, 128, 130, 129, 131, 136, 138, 137, 139, 132, 134, 133, 135,
-  140, 142, 141, 143, 160, 162, 161, 163, 168, 170, 169, 171, 164, 166, 165,
-  167, 172, 174, 173, 175, 144, 146, 145, 147, 152, 154, 153, 155, 148, 150,
-  149, 151, 156, 158, 157, 159, 176, 178, 177, 179, 184, 186, 185, 187, 180,
-  182, 181, 183, 188, 190, 189, 191, 64, 66, 65, 67, 72, 74, 73, 75, 68, 70,
-  69, 71, 76, 78, 77, 79, 96, 98, 97, 99, 104, 106, 105, 107, 100, 102, 101,
-  103, 108, 110, 109, 111, 80, 82, 81, 83, 88, 90, 89, 91, 84, 86, 85, 87, 92,
-  94, 93, 95, 112, 114, 113, 115, 120, 122, 121, 123, 116, 118, 117, 119, 124,
-  126, 125, 127, 192, 194, 193, 195, 200, 202, 201, 203, 196, 198, 197, 199,
-  204, 206, 205, 207, 224, 226, 225, 227, 232, 234, 233, 235, 228, 230, 229,
-  231, 236, 238, 237, 239, 208, 210, 209, 211, 216, 218, 217, 219, 212, 214,
-  213, 215, 220, 222, 221, 223, 240, 242, 241, 243, 248, 250, 249, 251, 244,
-  246, 245, 247, 252, 254, 253, 255
-];
