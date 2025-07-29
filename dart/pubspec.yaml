@@ -1,16 +1,8 @@
-name: my_project
-description: A sample command-line application.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+name: laes_utils
+description: 基于自定义 AES 算法的加密/解密工具类.
 
 environment:
   sdk: ^3.6.1
 
-# Add regular dependencies here.
 dependencies:
   crypto: ^3.0.6
-  # path: ^1.8.0
-
-dev_dependencies:
-  lints: ^5.0.0
-  test: ^1.24.0

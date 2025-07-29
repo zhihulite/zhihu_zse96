@@ -1,0 +1,8 @@
+{
+  "name": "laes_utils",
+  "license": "MIT",
+  "description": "基于自定义 AES 算法的加密/解密工具类.",
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  }
+}
