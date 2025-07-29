@@ -36,8 +36,8 @@ function main() {
   // createEncryptor 和 createDecryptor 的第二个参数iv可为数组或字符串
 
   // LAESEncrypt 示例
+  // createEncryptor(key, iv, isBinaryOutput) isBinaryOutput 默认为false 当为false时会base64编码输出数据
   // 计算 MD5 哈希 接口大部分需要计算md5 如果是json字符串不需要计算
-  // createEncryptor(key, iv, isBinaryOutput) isBinaryOutput 默认为false 当为false时不会base64编码输出数据
   const md5Data = CryptoJS.MD5("test").toString();
   console.log('MD5 Hash:', md5Data);
   const LAESEncrypt = laes_utils.createEncryptor("541a3a5896fbefd351917c8251328a236a7efbf27d0fad8283ef59ef07aa386dbb2b1fcbba167135d575877ba0205a02f0aac2d31957bc7f028ed5888d4bbe69ed6768efc15ab703dc0f406b301845a0a64cf3c427c82870053bd7ba6721649c3a9aca8c3c31710a6be5ce71e4686842732d9314d6898cc3fdca075db46d1ccf3a7f9b20615f4a303c5235bd02c5cdc791eb123b9d9f7e72e954de3bcbf7d314064a1eced78d13679d040dd4080640d18c37bbde", [102, 48, 53, 53, 49, 56, 53, 54, 97, 97, 53, 55, 53, 102, 97, 97]);
@@ -47,7 +47,7 @@ function main() {
   console.log('Final Encrypted Result:', encrypted);
 
   // LAESDecrypt 示例
-  // createDecryptor(key, iv, isBinaryInput) isBinaryInput 默认为false 当为false时不会base64解码输入数据
+  // createDecryptor(key, iv, isBinaryInput) isBinaryInput 默认为false 当为false时会base64解码输入数据
   // 部分接口需要base64解密 示例数据
   const encryptDataB64 = "MYqaRe5oqw9TtF2cIg4S2eONQBbXBYos/eWwmfTv//LpCDAoXA1yN7SxG4itY2qlp1SCmZ0Y52LBq9k5/ejkTWNwFkM0XPIWy9D5zg/y4C5C/g50r2WOZxpPzC5NXyuOs9LoGnsalgMBmySULdBqbJkRMG2SNYAcztOO6WHs2aiOND48PJm2pQySVodGwOLxbVozA9gGYfWlSAGQOXp7AkfwFhJQRHx9QEtmgNy5xC4reI1kSe+GtagLZVekmTWeiaJH/hvNSr17nbcSAtPkBkwv4dOsWZN3ZRyVgonM9bPzRrtBArMn8DMgX+hZSTD8zJWTG238JsvX1pKrpMHtxyH9Bi5a/5j1nCoVfibKpLubdDALsdB98K9cP4lDJRSVY3f40Ybgs82GqroTIVZsXg==";
   const LAESDecrypt = laes_utils.createDecryptor("77e8887a0ac9d3cf70842988a86ac2ad1d3548f611e6f04901114f9016bb16703c4d9409ab4faea557ea2620be0260192300dda0bf2ce816955aa8731ebc8f3075f8776071db7903b58e4a9ce0cecb61701c04790229e39139a03e66f3a94b0f593b3635671a3744a4403f0e5a90fd90336bb4151fbdcd81cab5e44f0779516df90de17ad5c9e1089a9dd63534cc40280dd77733884e71dec6ebcaa4e4376f2473ed6393c3dff6cdf1613d7047b42223e5d552a1", "18df3016faf4869c");
