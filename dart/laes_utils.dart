@@ -3,6 +3,11 @@
 // 作者: huajiqaq
 // 日期: 2025-07-29
 
+//
+// 注意事项:
+// 1. 传入 textToMatrix 的是 BigInt 类型。与 Python 不同，Dart 的 Number 有精度限制。
+//
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -198,14 +203,14 @@ class LAESUtils {
   /// 加密核心函数
   List<List<int>> encrypt(BigInt inputNum, List<List<int>> mkeySchedule) {
     Map<String, dynamic> encryptConf = getEncryptConf();
-    List<int> keySchedule = List<int>.from(encryptConf["key_schedule"]);
-    List<int> sBox = List<int>.from(encryptConf["s_box"]);
-    Map<int, String> dict1 = Map<int, String>.from(encryptConf["dict1"]);
-    Map<int, String> dict2 = Map<int, String>.from(encryptConf["dict2"]);
-    Map<int, String> dict3 = Map<int, String>.from(encryptConf["dict3"]);
-    Map<int, String> dict4 = Map<int, String>.from(encryptConf["dict4"]);
-    Map<int, String> dict5 = Map<int, String>.from(encryptConf["dict5"]);
-    List<int> roundConstants =  List<int>.from(encryptConf["round_constants"]);
+    List<int> keySchedule = encryptConf["key_schedule"];
+    List<int> sBox = encryptConf["s_box"];
+    Map<int, String> dict1 = encryptConf["dict1"];
+    Map<int, String> dict2 = encryptConf["dict2"];
+    Map<int, String> dict3 = encryptConf["dict3"];
+    Map<int, String> dict4 = encryptConf["dict4"];
+    Map<int, String> dict5 = encryptConf["dict5"];
+    List<int> roundConstants =  encryptConf["round_constants"];
 
     List<List<int>> state = addRoundKeys(
         textToMatrix(inputNum), 
@@ -222,7 +227,7 @@ class LAESUtils {
 
     List<List<List<int>>> states = [];
     for (var t in keyTemplates) {
-      String newKey = buildKey(t['template'], List<int>.from(t['indices']), stateToHex(state));
+      String newKey = buildKey(t['template'], t['indices'], stateToHex(state));
       states.add(textToMatrix(BigInt.parse(newKey, radix: 16)));
     }
 
@@ -235,7 +240,7 @@ class LAESUtils {
       if (i != 9) {
         states = [];
         for (var t in keyTemplates) {
-          String newKey = buildKey(t['template'], List<int>.from(t['indices']), stateToHex(state));
+          String newKey = buildKey(t['template'], t['indices'], stateToHex(state));
           states.add(textToMatrix(BigInt.parse(newKey, radix: 16)));
         }
       }
@@ -302,7 +307,7 @@ class LAESUtils {
   /// 处理输入数据
   Map<String, dynamic> processInput(Uint8List data) {
     Map<String, dynamic> decryptConf = getDecryptConf();
-    List<int> inputArray = List<int>.from(decryptConf["input_arr"]);
+    List<int> inputArray = decryptConf["input_arr"];
     int dataLength = data.length;
     Uint8List dataS = Uint8List(dataLength + 256);
     
@@ -320,7 +325,7 @@ class LAESUtils {
   /// 处理输出数据
   Uint8List processOut(Uint8List data, int dataLength) {
     Map<String, dynamic> decryptConf = getDecryptConf();
-    List<int> outArray = List<int>.from(decryptConf["out_arr"]);
+    List<int> outArray = decryptConf["out_arr"];
     Uint8List dataS = Uint8List(dataLength);
     
     for (int i = 0; i < dataS.length; i++) {
@@ -343,14 +348,14 @@ class LAESUtils {
   /// 解密核心函数
   List<List<int>> decrypt(BigInt inputNum, List<List<int>> mkeySchedule) {
     Map<String, dynamic> decryptConf = getDecryptConf();
-    List<int> keySchedule = List<int>.from(decryptConf["key_schedule"]);
-    List<int> sBox = List<int>.from(decryptConf["s_box"]);
-    Map<int, String> dict1 = Map<int, String>.from(decryptConf["dict1"]);
-    Map<int, String> dict2 = Map<int, String>.from(decryptConf["dict2"]);
-    Map<int, String> dict3 = Map<int, String>.from(decryptConf["dict3"]);
-    Map<int, String> dict4 = Map<int, String>.from(decryptConf["dict4"]);
-    Map<int, String> dict5 = Map<int, String>.from(decryptConf["dict5"]);
-    List<int> roundConstants = List<int>.from(decryptConf["round_constants"]);
+    List<int> keySchedule = decryptConf["key_schedule"];
+    List<int> sBox = decryptConf["s_box"];
+    Map<int, String> dict1 = decryptConf["dict1"];
+    Map<int, String> dict2 = decryptConf["dict2"];
+    Map<int, String> dict3 = decryptConf["dict3"];
+    Map<int, String> dict4 = decryptConf["dict4"];
+    Map<int, String> dict5 = decryptConf["dict5"];
+    List<int> roundConstants = decryptConf["round_constants"];
 
     List<List<int>> state = addRoundKeys(
         textToMatrix(inputNum), 
@@ -367,7 +372,7 @@ class LAESUtils {
 
     List<List<List<int>>> states = [];
     for (var t in keyTemplates) {
-      String newKey = buildKey(t['template'], List<int>.from(t['indices']), stateToHex(state));
+      String newKey = buildKey(t['template'], t['indices'], stateToHex(state));
       states.add(textToMatrix(BigInt.parse(newKey, radix: 16)));
     }
 
@@ -380,7 +385,7 @@ class LAESUtils {
       if (i != 9) {
         states = [];
         for (var t in keyTemplates) {
-          String newKey = buildKey(t['template'], List<int>.from(t['indices']), stateToHex(state));
+          String newKey = buildKey(t['template'], t['indices'], stateToHex(state));
           states.add(textToMatrix(BigInt.parse(newKey, radix: 16)));
         }
       }
@@ -427,17 +432,17 @@ class LAESUtils {
     Map<String, dynamic> encryptConf = getEncryptConf();
     
     // 预先计算并转换IV
-    String ivHex = transformIv(iv, List<int>.from(encryptConf["iv_arr"]));
+    String ivHex = transformIv(iv, encryptConf["iv_arr"]);
     
     // 预先生成轮密钥
     List<String> roundKeys = generateRoundKeys(key);
     
     // 返回只需要input_data的函数
     return (String inputData) {
-      List<int> bytesData = padData(List<int>.from(transform(
+      List<int> bytesData = padData(transform(
           Uint8List.fromList(utf8.encode(inputData)), 
-          List<int>.from(encryptConf["input_arr"])
-      )));
+          encryptConf["input_arr"]
+      ));
       String inputHex = bytesToHex(bytesData);
       
       List<String> blocks = [];
@@ -455,7 +460,7 @@ class LAESUtils {
       }
       
       List<int> finalBytes = hexToBytes(signatures.join(''));
-      Uint8List transformed = transform(finalBytes, List<int>.from(encryptConf["out_arr"]));
+      Uint8List transformed = transform(finalBytes, encryptConf["out_arr"]);
       // 根据 isBinaryOutput 参数决定返回格式
       if (isBinaryOutput) {
         return String.fromCharCodes(transformed);
@@ -470,7 +475,7 @@ class LAESUtils {
     Map<String, dynamic> decryptConf = getDecryptConf();
     
     // 预先计算并转换IV
-    String ivHex = transformIv(iv, List<int>.from(decryptConf["iv_arr"]));
+    String ivHex = transformIv(iv, decryptConf["iv_arr"]);
     
     // 预先生成轮密钥
     List<String> roundKeys = generateRoundKeys(key);

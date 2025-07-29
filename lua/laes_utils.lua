@@ -239,7 +239,7 @@ function LAESUtils:build_key(template, indices, source)
     return table.concat(key_parts)
 end
 
--- 加密核心函数（支持大数）
+-- 加密核心函数
 function LAESUtils:encrypt(input_num, mkey_schedule)
     local encryptConf = self:getEncryptConf()
     local key_schedule = encryptConf.key_schedule
@@ -314,7 +314,7 @@ function LAESUtils:generate_round_keys(key_string)
     local bytes_data = self.hex_to_bytes(key_string)
     -- 对字节数组进行异或运算生成密钥字节
     local key_bytes = {}
-    for i = 5, #bytes_data do  -- Lua索引从1开始，所以从5开始
+    for i = 4 + 1, #bytes_data do  -- Lua索引从1开始，所以从5开始
         key_bytes[#key_bytes + 1] = bytes_data[i] ~ bytes_data[(i - 1) % 3 + 1]
     end
     -- 将密钥字节转换回十六进制字符串

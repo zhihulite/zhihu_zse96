@@ -3,6 +3,11 @@
 // 作者: huajiqaq
 // 日期: 2025-07-29
 
+//
+// 注意事项:
+// 1. 传入 textToMatrix 的是 BigInt 类型。与 Python 不同，JavaScript 的 Number 有精度限制。
+//
+
 class LAESUtils {
   constructor(encryptConf, decryptConf, isDebug = false) {
     /** 初始化AES加密器 */
@@ -89,29 +94,12 @@ class LAESUtils {
     return outputArr;
   }
 
-textToMatrix(text) {
-  /** 将大整数转换为4x4矩阵 */
-  const matrix = [];
-  // Ensure text is treated as a BigInt
-  const bigText = typeof text === 'bigint' ? text : BigInt(text);
-  
-  for (let i = 0; i < 16; i++) {
-    const shiftAmount = BigInt(8 * (15 - i));
-    const byte = Number((bigText >> shiftAmount) & 0xFFn);
-    if (i % 4 === 0) {
-      matrix.push([byte]);
-    } else {
-      matrix[Math.floor(i / 4)].push(byte);
-    }
-  }
-  return matrix;
-}
-
-  textToMatrix2(text) {
+  textToMatrix(text) {
     /** 将大整数转换为4x4矩阵 */
     const matrix = [];
     for (let i = 0; i < 16; i++) {
-      const byte = (text >> (8 * (15 - i))) & 0xFF;
+      const shiftAmount = BigInt(8 * (15 - i));
+      const byte = Number((text >> shiftAmount) & 0xFFn);
       if (i % 4 === 0) {
         matrix.push([byte]);
       } else {

@@ -3,6 +3,11 @@
 # 作者: huajiqaq
 # 日期: 2025-07-29
 
+#
+# 注意事项:
+# 1. Python 的 int 类型原生支持任意精度整数（大整数），而许多其他语言（如 JavaScript 的 Number）有精度限制。在将此逻辑从 Python 转换到其他语言时，务必使用该语言对应的高精度整数类型（例如 JavaScript 的 BigInt）来处理 AES 运算中涉及的大数，以确保计算的准确性和一致性。
+#
+
 import base64
 from typing import Any, List, Dict, Callable, Optional
 
