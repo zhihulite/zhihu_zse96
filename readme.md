@@ -10,7 +10,8 @@
 ├── python/       # Python实现
 ├── nodejs/       # Node.js实现  
 ├── lua/          # Lua实现
-└── dart/         # Dart实现
+├── dart/         # Dart实现
+└── x-req-signature.py        # Python实现x-req-signature生成(仅py实现)
 ```
 
 每个语言目录包含：
