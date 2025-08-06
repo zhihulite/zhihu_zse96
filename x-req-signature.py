@@ -2,28 +2,31 @@ import hmac
 import hashlib
 from typing import Optional
 
+
 def hmac_sha1(key: bytes, message: bytes) -> bytes:
     """HMAC-SHA1 哈希计算"""
     return hmac.new(key, message, hashlib.sha1).digest()
+
 
 def bytes_to_hex(binary: bytes) -> str:
     """字节转16进制字符串"""
     return binary.hex()
 
+
 def generate_zhihu_signature(
     api_version: str,
-    uuid: Optional[str],
+    udid: Optional[str],
     backup_device_id: Optional[str],
     device_info: str,
     client_id: str,
     timestamp: str,
-    secret_key: str
+    secret_key: str,
 ) -> str:
     """
     生成知乎API签名
-    
+
     :param api_version: API版本号 (如 "2")
-    :param uuid: uuid (可能为空)
+    :param udid: 设备id (可能为空)
     :param backup_device_id: 备用设备ID
     :param device_info: 设备信息
     :param client_id: 客户端标识 (如 "1355")
@@ -32,24 +35,26 @@ def generate_zhihu_signature(
     :return: 40位SHA1签名 (小写16进制)
     """
     # 确定签名拼接模式
-    if not uuid:
+    if not udid:
         signature_base = (
             f"{client_id}{api_version}{device_info}{timestamp}"
-            if not backup_device_id else
-            f"{client_id}{backup_device_id}{device_info}{timestamp}"
+            if not backup_device_id
+            else f"{client_id}{backup_device_id}{device_info}{timestamp}"
         )
     else:
-        signature_base = f"{client_id}{api_version}{device_info}{uuid}{timestamp}"
+        signature_base = f"{client_id}{api_version}{device_info}{udid}{timestamp}"
 
     # 计算签名
     signature = hmac_sha1(
-        key=secret_key.encode('utf-8'),
-        message=signature_base.encode('utf-8')
+        key=secret_key.encode("utf-8"), message=signature_base.encode("utf-8")
     )
-    
+
     return bytes_to_hex(signature)
 
+
 from urllib.parse import urlencode, quote
+
+
 # com.zhuhu.android.cloudid.model.DeviceInfo
 def generate_zhihu_formdata():
     params_dict = {
@@ -107,23 +112,24 @@ def generate_zhihu_formdata():
         # 获取时区秒数
         "tz_of": "28800",
         # 一般都是0
-        "zx_expired": "0"
+        "zx_expired": "0",
     }
-    
+
     return urlencode(params_dict, doseq=True, quote_via=quote)
+
 
 if __name__ == "__main__":
     # 测试用例
     test_signature = generate_zhihu_signature(
         api_version="2",
-        uuid="T7DT9CGe3xpLBQJJcE6uMbhRvUE_WO5JI94=",
+        udid="T7DT9CGe3xpLBQJJcE6uMbhRvUE_WO5JI94=",
         backup_device_id=None,
         device_info=generate_zhihu_formdata(),
         client_id="1355",
         timestamp="1754463834",
-        secret_key="dd49a835-56e7-4a0f-95b5-efd51ea5397f"
+        secret_key="dd49a835-56e7-4a0f-95b5-efd51ea5397f",
     )
-    
+
     expected_signature = "d7118b914760ecd953ebfd852675c9cef3417f61"
     print(f"Generated signature: {test_signature}")
     print(f"Verification: {'PASS' if test_signature == expected_signature else 'FAIL'}")
