@@ -39,7 +39,7 @@ void main() {
 
   // LAESEncrypt 示例
   // createEncryptor(key, iv, isBinaryOutput) isBinaryOutput 默认为false 当为false时会base64编码输出数据
-  // 计算 MD5 哈希 接口大部分需要计算md5 如果是json字符串不需要计算
+  // 计算 MD5 哈希 接口大部分需要计算md5 如果是表单数据或其他情况不需要计算
   var md5Data = md5.convert(utf8.encode("test")).toString();
   print('MD5 Hash: $md5Data');
   var LAESEncrypt = laes_utils.createEncryptor("541a3a5896fbefd351917c8251328a236a7efbf27d0fad8283ef59ef07aa386dbb2b1fcbba167135d575877ba0205a02f0aac2d31957bc7f028ed5888d4bbe69ed6768efc15ab703dc0f406b301845a0a64cf3c427c82870053bd7ba6721649c3a9aca8c3c31710a6be5ce71e4686842732d9314d6898cc3fdca075db46d1ccf3a7f9b20615f4a303c5235bd02c5cdc791eb123b9d9f7e72e954de3bcbf7d314064a1eced78d13679d040dd4080640d18c37bbde",[102, 48, 53, 53, 49, 56, 53, 54, 97, 97, 53, 55, 53, 102, 97, 97]);

@@ -471,7 +471,7 @@ function LAESUtils:decrypt(input_num, mkey_schedule)
     for i = 1, #final_indices do
         local idx = final_indices[i] + 1  -- Lua索引调整
         local hex_val = tonumber(state_hex:sub(idx, idx + 1), 16)
-        new_key_parts[#new_key_parts + 1] = dict5[hex_val]  -- Lua索引调整
+        new_key_parts[#new_key_parts + 1] = dict5[hex_val]
     end
     local new_key = table.concat(new_key_parts)
     
