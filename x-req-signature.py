@@ -94,11 +94,13 @@ def generate_zhihu_formdata():
         "ph_md": "PKR110",
         # 安卓版本
         "ph_os": "Android 15",
-        # 手机序列号
+        # 使用Build.SERIAL获取手机序列号
         "ph_sn": "unknown",
+        # 不是预装版本就是返回undefined
         "pre_install": "undefined",
         # 运营商
         "pvd_nm": "中国移动",
+        # 获取jvm分配总内存(Mb)
         "tt_mem": "182",
         # 使用StatFS 获取内存剩余空间
         "tt_st": "470233",
