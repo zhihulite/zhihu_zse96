@@ -377,7 +377,7 @@ class ZhihuRequest {
     }
 }
 
-async function getZst(authorization, udid = "", zst82 = "") {
+async function getZst(authorization, udid = "", zst82 = "", zst81) {
 
     const LAESDecrypt = laes_utils.createDecryptor("77e8887a0ac9d3cf70842988a86ac2ad1d3548f611e6f04901114f9016bb16703c4d9409ab4faea557ea2620be0260192300dda0bf2ce816955aa8731ebc8f3075f8776071db7903b58e4a9ce0cecb61701c04790229e39139a03e66f3a94b0f593b3635671a3744a4403f0e5a90fd90336bb4151fbdcd81cab5e44f0779516df90de17ad5c9e1089a9dd63534cc40280dd77733884e71dec6ebcaa4e4376f2473ed6393c3dff6cdf1613d7047b42223e5d552a1", "18df3016faf4869c");
     function parseZst(data) {
@@ -465,6 +465,7 @@ async function getZst(authorization, udid = "", zst82 = "") {
         'Authorization': authorization,
         ...(udid && { "x-udid": udid }),
         ...(zst82 && { "X-ZST-82": zst82 }),
+        ...(zst81 && { "X-ZST-81": zst81 }),
         'Content-Type': 'application/x-www-form-urlencoded',
     };
 
@@ -485,8 +486,8 @@ async function getZst(authorization, udid = "", zst82 = "") {
         // zst82为空就递归调用 并且将 postjson 的 action 改为 ZST_AROUSE 然后返回
         if (!zst82) {
             postjson.action = "ZST_AROUSE"
-            const zst82 = result[0];
-            return await getZst(authorization, udid, zst82);
+            const [zst82, zst81] = result;
+            return await getZst(authorization, udid, zst82, zst81);
         } else {
             return result
         }
