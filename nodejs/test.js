@@ -218,7 +218,7 @@ async function getGuestToken() {
     const postdata = encrypt_data(signature, true);
 
     const headers = {
-        'x-req-ts': timestamp,
+        'X-REQ-TS': timestamp,
         'x-app-id': appID,
         'x-sign-version': '2',
         'x-req-signature': signature,
@@ -264,7 +264,7 @@ class ZhihuRequest {
         console.log('BindLoginData:', loginData);
         this.udid = loginData.udid
         if (this.udid == null) {
-            throw Error("提供LoginData缺少udid 请先使用游客登录获取udid 然后手动添加到loginData udid")
+            throw Error("提供loginData缺少udid 请先使用游客登录获取udid 然后手动添加到loginData udid")
         }
         loginData = loginData.guest || loginData
         this.accessToken = "Bearer " + loginData.access_token
@@ -283,16 +283,15 @@ class ZhihuRequest {
             "x-api-version": "3.0.93",
             "x-app-version": appVersion,
             "x-app-za": x_app_za,
-            "x-app-bundleid": "com.zhihu.android",
+            "x-app-bundleid": appBundle,
             "x-app-flavor": "play",
             "x-app-build": "release",
-            "Accept-Encoding": "gzip",
             "x-Zse-93": apiVersion,
+            ...(this.cookie && { "Cookie": this.cookie }),
             ...(this.accessToken && { "Authorization": this.accessToken }),
             ...(this.udid && { "x-udid": this.udid }),
-            ...(this.cookie && { "Cookie": this.cookie }),
-            ...(this.zst81 && { "x-zst-81": this.zst81 }),
-            ...(this.zst82 && { "x-zst-82": this.zst82 }),
+            ...(this.zst81 && { "X-ZST-81": this.zst81 }),
+            ...(this.zst82 && { "X-ZST-82": this.zst82 }),
             ...defaultHeaders,
         };
     }
@@ -316,7 +315,7 @@ class ZhihuRequest {
             ...this.defaultHeaders,
             ...headers,
             ...(isGet && {
-                "x-zse-96": `1.0_${this.encryptData(url)}`,
+                "x-Zse-96": `1.0_${this.encryptData(url)}`,
             }),
         };
 
@@ -455,17 +454,17 @@ async function getZst(authorization, udid = "", zst82 = "") {
     const signature = hmacSha1("F1LiufZpstUlhDjSGu8PrgRQWyLd1d9E", appID + platformId + timestamp + postdata + udid + zst82)
 
     const headers = {
-        'x-req-ts': timestamp,
-        'x-app-id': appID,
-        'x-platform-id': platformId,
-        'x-req-signature': signature,
+        'X-REQ-TS': timestamp,
+        'X-APP-ID': appID,
+        'X-PLATFORM-ID': platformId,
+        'X-REQ-SIGNATURE': signature,
         'X-Zse-93': apiVersion,
         'User-Agent': user_agent,
         'x-app-version': appVersion,
         'x-app-za': x_app_za,
         'Authorization': authorization,
         ...(udid && { "x-udid": udid }),
-        ...(zst82 && { "x-zst-82": zst82 }),
+        ...(zst82 && { "X-ZST-82": zst82 }),
         'Content-Type': 'application/x-www-form-urlencoded',
     };
 
@@ -510,7 +509,7 @@ async function getZst(authorization, udid = "", zst82 = "") {
 
 
     try {
-        // GET 请求 (自动添加 x-zse-93 和 x-zse-96)
+        // GET 请求 (自动添加 x-Zse-93 和 x-Zse-96)
         const answer = await zhihu.get("https://api.zhihu.com/answers/v2/87117590856");
         console.log(answer);
 
