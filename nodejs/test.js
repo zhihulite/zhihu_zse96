@@ -500,7 +500,7 @@ async function getZst(authorization, udid = "", zst82 = "", zst81) {
 
 (async () => {
     const data = await getGuestToken()
-    const zsts = await getZst(data.guest.access_token, data.udid)
+    const zsts = await getZst("Bearer " + data.guest.access_token, data.udid)
 
     const zhihu = new ZhihuRequest({
         encryptData: encrypt_data,
