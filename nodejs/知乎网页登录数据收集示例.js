@@ -36,11 +36,12 @@
     if (GM_getValue(storageKey).json_str) return
     unsafeWindow.fetch = function (input, init) {
         return originalFetch(input, init).then(async response => {
+            const clonedResponse = response.clone();
             const currentData = GM_getValue(storageKey);
 
             try {
-                const res = await response.text();
-                const xUdid = response.headers.get('x-udid');
+                const res = await clonedResponse.text();
+                const xUdid = clonedResponse.headers.get('x-udid');
 
                 // 返回数据文本中有access_token时才存储
                 if (/access_token/.test(res)) {
