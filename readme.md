@@ -11,6 +11,7 @@
 ├── nodejs/                # Node.js 实现 ( test.js 包含获取 zst82 zst81 生成游客凭证 请求知乎api示例)
 ├── lua/                   # Lua 实现
 ├── dart/                  # Dart 实现
+├── test.crx               # 示例获取知乎登录数据的浏览器插件(0.1)
 └── x-req-signature.py     # x-req-signature 参数生成（基于 libencrypt.so 中 encrypt 函数 的 Python 实现）
 ```
 
