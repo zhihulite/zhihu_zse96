@@ -253,10 +253,10 @@ class ZhihuRequest {
      * @param {Object} options
      * @param {Function} options.encryptData - 加密函数 (必须)
      * @param {Object} [options.loginData] - 登录数据 (必须)
-     * @param {Object} [options.zsts] - zst81以及zst82
+     * @param {Array} [options.zsts] - zst81以及zst82
      * @param {Object} [options.defaultHeaders] - 默认请求头
      */
-    constructor({ encryptData, loginData, zsts = {}, defaultHeaders = {} }) {
+    constructor({ encryptData, loginData, zsts = [], defaultHeaders = {} }) {
         if (typeof encryptData !== 'function') {
             throw new Error('必须提供 encryptData 加密函数');
         }
