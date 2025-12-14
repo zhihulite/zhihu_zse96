@@ -297,13 +297,13 @@ class ZhihuRequest {
      * 发送请求
      * @param {String} method - GET/POST/PATCH/PUT/DELETE
      * @param {String} url
-     * @param {Object} [data] - 请求体 (非GET请求时使用)
+     * @param {String} data - 请求体 (非GET请求时使用)
      * @param {Object} [options]
      * @param {Object} [options.headers] - 额外请求头
      * @param {Boolean} [options.encryptBody] - 是否加密请求体 (默认: true)
      * @returns {Promise<Object>}
      */
-    async request(method, url, data = {}, { headers = {}, encryptBody = true } = {}) {
+    async request(method, url, data = "", { headers = {}, encryptBody = true } = {}) {
         method = method.toUpperCase();
         const isGet = method === 'GET';
 
@@ -319,15 +319,8 @@ class ZhihuRequest {
         //  处理请求体
         let body = null;
         if (!isGet && data) {
-            body = !data || Object.keys(data).length === 0
-                ? ""
-                : encryptBody
-                    ? this.encryptData(data, false)
-                    : JSON.stringify(data);
-
-            requestHeaders["Content-Type"] = encryptBody
-                ? "application/x-www-form-urlencoded"
-                : "application/json";
+            body = encryptBody ? this.encryptData(data, false) : data;
+            requestHeaders["Content-Type"] = "application/x-www-form-urlencoded";
         }
 
         // 发送请求
