@@ -74,25 +74,22 @@ function base64Encode(str) {
     return Buffer.from(str, 'utf8').toString('base64');
 }
 
-function encrypt_data(data, isFormData = false) {
-    if (!isFormData && typeof data !== 'string') {
-        throw new Error('URL data must be a string');
-    }
-    if (isFormData && typeof data !== 'string') {
-        throw new Error('Form data must be a string');
+function encrypt_data(data, isGetRequest = true) {
+    if (typeof data !== 'string') {
+        throw new Error('data must be a string');
     }
 
-    if (!isFormData) {
+    if (isGetRequest) {
         const apiPrefix = 'https://api.zhihu.com';
+        if (data.startsWith("http://api.zhihu.com")) {
+            data = data.replace("http://", "https://");
+        }
         if (!data.startsWith(apiPrefix)) {
             throw new Error(`URL must start with ${apiPrefix}`);
         }
         const apiPath = data.slice(apiPrefix.length)
         data = `${apiVersion}+${apiPath}+${appVersion}+${this.accessToken}+${this.udid}`
-        console.log(data)
         data = crypto.createHash('md5').update(data).digest('hex');
-    } else {
-        data = base64Encode(encodeURIComponent(data));
     }
 
     return LAESEncrypt(data);
@@ -325,7 +322,7 @@ class ZhihuRequest {
             body = !data || Object.keys(data).length === 0
                 ? ""
                 : encryptBody
-                    ? this.encryptData(data, true)
+                    ? this.encryptData(data, false)
                     : JSON.stringify(data);
 
             requestHeaders["Content-Type"] = encryptBody
