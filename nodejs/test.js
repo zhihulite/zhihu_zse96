@@ -212,7 +212,7 @@ async function getGuestToken() {
         timestamp,                 // timestamp
         "dd49a835-56e7-4a0f-95b5-efd51ea5397f" // secretKey
     );
-    const postdata = encrypt_data(signature, true);
+    const postdata = encrypt_data(signature, false);
 
     const headers = {
         'X-REQ-TS': timestamp,
